@@ -178,7 +178,7 @@ signal on_fracture_param_changed
 #---------------------------------------------------------------------------------------------------
 
 # This node will hold all the rigid bodies chunks after you call "smash_the_mesh()" otherwise
-# it will be null. If you want to iterate over the rigid-bodies it's adisable to call
+# it will be null. If you want to iterate over the rigid-bodies it's advisable to call
 # chunks_iterate() instead with a callback.
 # Neverthelss the structure of a chunk is the following:
 # rb_parent(the root for all) > RigidBody3D(the first node of each chunk) > CollisionShape3D > MeshInstance3D
@@ -304,7 +304,7 @@ func smash_the_mesh():
 			rb.angular_velocity += rb_ancestor.angular_velocity * 0.1
 
 # This is an helper method to automatically add a rigid body and a collision shape 
-# this this instance. It will use the same physics settings of the chunks.
+# on this instance. It will use the same physics settings of the chunks.
 func add_physics_to_self():
 	var rb_ancestor = $"../.." as RigidBody3D
 	if !rb_ancestor: rb_ancestor = $".." as RigidBody3D	
