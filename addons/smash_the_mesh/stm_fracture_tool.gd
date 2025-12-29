@@ -100,6 +100,9 @@ func fracture(chunk_mesh: Mesh, chunks_count: Vector3i, opt: Dictionary):
 	
 	var shuffle: bool = opt.random_sampling
 	
+	var start_time = Time.get_ticks_msec()
+
+	var chunk_positions = PackedVector3Array()
 	if shuffle: z_range.shuffle()
 	for z in z_range:
 		chunk_position.z = chunk_center.z + z * chunk_size.z
@@ -111,8 +114,13 @@ func fracture(chunk_mesh: Mesh, chunks_count: Vector3i, opt: Dictionary):
 				chunk_position.x = chunk_center.x + x * chunk_size.x
 				print("\t\t# computing chunk ", idx, "/", count)
 				idx += 1
-				var chunk = stm_fracture_eat_a_chunk(chunk_position, chunk_data)
-				if chunk: chunks.push_back( chunk )
+				chunk_positions.push_back(chunk_position)
+
+	chunks = stm_fracture_eat_a_chunk(chunk_positions, chunk_data)
+	
+	var end_time = Time.get_ticks_msec()
+	var duration = end_time - start_time
+	print("Elapsed Time: ", duration)
 				
 	return chunks
 
@@ -168,26 +176,30 @@ func stm_fracture_process_chunk(chunk_mesh: Mesh):
 	
 	return [chunk_mesh, vertices, idx_map]
 
-func stm_fracture_eat_a_chunk(where: Vector3, chunk_data: Array) -> Mesh:
-	
-	# chunk_data := [0: chunk_mesh, 1: chunk_unique_vertices, 2: chunk_idx_map, 3: chunk_size, 4: chunk_noise, 5: optimize_flag, 6: chunk_vertices_threshold ]
-	stm_fracture_gen_chunk(chunk_data)
-	
-	stm_csg_chunk_node.position = where
+func stm_fracture_eat_a_chunk(where: PackedVector3Array, chunk_data: Array) -> Array:
+	var eaten_chunks = Array()
 
-	stm_csg_chunk_node.operation = CSGShape3D.OPERATION_INTERSECTION
-	var eaten_chunk: Mesh =  stm_grab_result_data()
+	for pos in where:
+		# chunk_data := [0: chunk_mesh, 1: chunk_unique_vertices, 2: chunk_idx_map, 3: chunk_size, 4: chunk_noise, 5: optimize_flag, 6: chunk_vertices_threshold ]
+		stm_fracture_gen_chunk(chunk_data)
+
+		stm_csg_chunk_node.position = pos
+
+		stm_csg_chunk_node.operation = CSGShape3D.OPERATION_INTERSECTION
+		var eaten_chunk: Mesh =  stm_grab_result_data()
 	
-	if eaten_chunk.get_surface_count() < 1 || eaten_chunk.surface_get_array_len(0) < chunk_data[6]:
-		return null
+		if eaten_chunk.get_surface_count() < 1 || eaten_chunk.surface_get_array_len(0) < chunk_data[6]:
+			continue
 	
-	if chunk_data[5]: # optimize
-		eaten_chunk = stm_optimize_mesh(eaten_chunk)
+		if chunk_data[5]: # optimize
+			eaten_chunk = stm_optimize_mesh(eaten_chunk)
 	
-	stm_csg_chunk_node.operation = CSGShape3D.OPERATION_SUBTRACTION
-	stm_csg_source_node.mesh = stm_grab_result_data()
+		stm_csg_chunk_node.operation = CSGShape3D.OPERATION_SUBTRACTION
+		stm_csg_source_node.mesh = stm_grab_result_data()
+
+		eaten_chunks.push_back(eaten_chunk)
 	
-	return eaten_chunk
+	return eaten_chunks
 
 func stm_fracture_gen_chunk(chunk_data: Array):
 	# chunk_data := [0: chunk_mesh, 1: chunk_unique_vertices, 2: chunk_idx_map, 3: chunk_size, 4: chunk_noise, 5: optimize_flag, 6: chunk_vertices_threshold ]
