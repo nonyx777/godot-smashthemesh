@@ -100,21 +100,14 @@ func fracture(chunk_mesh: Mesh, chunks_count: Vector3i, opt: Dictionary):
 	
 	var shuffle: bool = opt.random_sampling
 
-	if shuffle:
-		var y_amount = z_range.size() * y_range.size()
-		var x_amount = z_range.size() * y_range.size() * x_range.size()
-
-		z_range.shuffle()
-		for i in range(y_amount):
-			y_range.shuffle()
-		for i in range(x_amount):
-			x_range.shuffle()
-
 	var chunk_positions = PackedVector3Array()
+	if shuffle: z_range.shuffle()
 	for z in z_range:
 		chunk_position.z = chunk_center.z + z * chunk_size.z
+		if shuffle: y_range.shuffle()
 		for y in y_range:
 			chunk_position.y = chunk_center.y + y * chunk_size.y
+			if shuffle: x_range.shuffle()
 			for x in x_range:
 				chunk_position.x = chunk_center.x + x * chunk_size.x
 				print("\t\t# computing chunk ", idx, "/", count)
